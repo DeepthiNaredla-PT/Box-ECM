@@ -1,5 +1,5 @@
 import { sha1DigestBase64, sha1DigestBase64ForEntireFile } from "./utilities/uploadHelper";
-const API_BASE = "http://localhost:5000";
+const API_BASE = "https://localhost:7104";
 //const API_BASE = "https://boxecm.local/api";
 const CALL_BACK_URL = "http://localhost:3000/auth/callback";
 //const CALL_BACK_URL = "https://boxecm.local/auth/callback";

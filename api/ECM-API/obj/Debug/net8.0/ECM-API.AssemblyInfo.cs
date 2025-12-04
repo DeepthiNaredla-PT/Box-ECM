@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("ECM-API")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+212344ff875b66a027cf8e7c3e1c2d60faf3b24a")]
 [assembly: System.Reflection.AssemblyProductAttribute("ECM-API")]
 [assembly: System.Reflection.AssemblyTitleAttribute("ECM-API")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

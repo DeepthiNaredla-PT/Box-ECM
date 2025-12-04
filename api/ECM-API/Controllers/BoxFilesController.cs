@@ -1,11 +1,6 @@
-﻿using ECM_API.Services;
-using Microsoft.AspNetCore.Http;
+﻿using ECM_API.Models;
+using ECM_API.Services;
 using Microsoft.AspNetCore.Mvc;
-using System.Net.Http.Headers;
-using System.Text.Json;
-using System.Text;
-using ECM_API.Models;
-using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace ECM_API.Controllers
 {
@@ -16,12 +11,17 @@ namespace ECM_API.Controllers
         private readonly BoxApiService _api;
         private readonly TokenService _tokenService;
         private readonly ScormProcessingService _scormProcessingService;
+        private readonly TriggerService _triggerService;
 
-        public BoxFilesController(BoxApiService api, TokenService tokenService, ScormProcessingService scormProcessingService)
+        public BoxFilesController(BoxApiService api,
+            TokenService tokenService,
+            ScormProcessingService scormProcessingService,
+            TriggerService triggerService)
         {
             _api = api;
             _tokenService = tokenService;
             _scormProcessingService = scormProcessingService;
+            _triggerService = triggerService;
         }
 
         [HttpGet("/box/token")]
@@ -51,6 +51,7 @@ namespace ECM_API.Controllers
             if (!result.Success)
                 return BadRequest(result.Error);  // VALID HERE
 
+            await _triggerService.TriggerVectorService(result.Data.Id);
             return Ok(result.Data);
         }
 
@@ -68,6 +69,7 @@ namespace ECM_API.Controllers
             if (!result.Success)
                 return BadRequest(result.Error);  // VALID HERE
 
+            await _triggerService.TriggerVectorService(result.Data.Id);
             return Ok(result.Data);
         }
 
@@ -79,7 +81,7 @@ namespace ECM_API.Controllers
             var result = await _api.UploadLargeFileAsync(userId, file);
             if (!result.Success)
                 return BadRequest(result.Error);  // VALID HERE
-
+            await _triggerService.TriggerVectorService(result.Data.Id);
             return Ok(result.Data);
         }
 
@@ -97,7 +99,7 @@ namespace ECM_API.Controllers
             var result = await _api.CommitUploadAsync(userId, sessionId, body.Digest, body.Parts);
             if (!result.Success)
                 return BadRequest(result.Error);  // VALID HERE
-
+            await _triggerService.TriggerVectorService(result.Data.Id);
             return Ok(result.Data);
         }
 

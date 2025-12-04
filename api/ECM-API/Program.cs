@@ -26,6 +26,7 @@ namespace ECM_API
             builder.Services.AddSingleton<BoxApiService>();
             builder.Services.AddSingleton<TokenService>();
             builder.Services.AddSingleton<ScormProcessingService>();
+            builder.Services.AddSingleton<TriggerService>();
             builder.Services.AddCors(o => o.AddPolicy("react", p =>
                 p.AllowAnyOrigin()
                  .AllowAnyHeader()

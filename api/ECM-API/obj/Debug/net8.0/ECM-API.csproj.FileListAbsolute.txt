@@ -133,3 +133,4 @@ C:\Users\deepthi.naredla\Source\Projects\Colibri\POC\Box\api\ECM-API\obj\Debug\n
 C:\Users\deepthi.naredla\Source\Projects\Colibri\POC\Box\api\ECM-API\obj\Debug\net8.0\ECM-API.genruntimeconfig.cache
 C:\Users\deepthi.naredla\Source\Projects\Colibri\POC\Box\api\ECM-API\obj\Debug\net8.0\ref\ECM-API.dll
 C:\Users\deepthi.naredla\Source\Projects\Colibri\POC\Box\api\ECM-API\obj\Debug\net8.0\staticwebassets.upToDateCheck.txt
+C:\Users\deepthi.naredla\Source\Projects\Colibri\POC\Box\api\ECM-API\obj\Debug\net8.0\ECM-API.sourcelink.json
