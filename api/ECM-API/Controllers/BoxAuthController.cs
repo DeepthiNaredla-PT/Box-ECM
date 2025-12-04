@@ -12,6 +12,7 @@ namespace ECM_API.Controllers
         private readonly BoxOptions _opts;
         private readonly BoxAuthService _authService;
         private readonly Store _store;
+        private readonly string _userId = "f685845db3f048cb8dfc874727021c8f";
 
         public BoxAuthController(
             IOptions<BoxOptions> opts,
@@ -41,13 +42,13 @@ namespace ECM_API.Controllers
             var token = await _authService.ExchangeCodeForTokenAsync(code);
             if (token == null) return Content("OAuth error");
 
-            var userId = Guid.NewGuid().ToString("N");
+            //var userId = Guid.NewGuid().ToString("N");
 
-            _store.StoreTokens(userId, token);
+            _store.StoreTokens(_userId, token);
 
             // Redirect back to React UI with userId
             Console.WriteLine(_store.GetUrl());
-            return Redirect($"{_store.GetUrl()}?userId={userId}");
+            return Redirect($"{_store.GetUrl()}?userId={_userId}");
             //return Redirect($"http://10.10.97.135:3000/auth/callback?userId={userId}");
         }
     }
