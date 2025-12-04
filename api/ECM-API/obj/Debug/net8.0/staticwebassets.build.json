@@ -1,0 +1,12 @@
+{
+  "Version": 1,
+  "Hash": "7CkCHjChaVlLh+MVNkeTFmjKN40zDGQYEnEv5zwIPp8=",
+  "Source": "ECM-API",
+  "BasePath": "_content/ECM-API",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [],
+  "Assets": [],
+  "Endpoints": []
+}

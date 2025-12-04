@@ -1,0 +1,33 @@
+version: "3.9"
+services:
+  api:
+    build: ./api
+    container_name: my_api
+    ports:
+      - "5000:5000"
+    networks:
+      - mynet
+
+  client:
+    build: ./client
+    container_name: my_client
+    ports:
+      - "3000:80"   # React served by nginx
+    networks:
+      - mynet
+  nginx:
+    image: nginx:latest
+    container_name: my_nginx_ssl
+    ports:
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+      - ./certs:/etc/nginx/certs
+    depends_on:
+      - api
+      - client
+    networks:
+      - mynet
+
+networks:
+  mynet:

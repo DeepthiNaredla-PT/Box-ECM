@@ -1,0 +1,25 @@
+# Node
+client/node_modules/
+client/build/
+
+# Dotnet
+api/bin/
+api/obj/
+
+# Certificates (NEVER PUSH PRIVATE KEYS)
+certs/
+
+# Docker
+*.log
+
+# VS Code
+.vscode/
+
+# System
+.DS_Store
+Thumbs.db
+
+# Visual Studio
+.vs/
+api/.vs/
+*.vsidx
