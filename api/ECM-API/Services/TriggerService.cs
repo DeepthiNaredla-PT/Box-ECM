@@ -3,10 +3,14 @@
     public class TriggerService
     {
         private readonly IHttpClientFactory _http;
-        private readonly string vectorBaseUrl = "https://ignite.pal.tech/colibri/api/";
-        public TriggerService(IHttpClientFactory http)
+        private readonly TokenService _tokenService;
+        private readonly string _vectorBaseUrl = "https://ignite.pal.tech/colibri/api/";
+        private readonly string _userId = "f685845db3f048cb8dfc874727021c8f";
+
+        public TriggerService(IHttpClientFactory http, TokenService tokenService)
         {
             _http = http;
+            _tokenService = tokenService;
         }
 
         public async Task<bool> TriggerVectorService(string fileId)
@@ -14,7 +18,7 @@
             try
             {
                 var client = _http.CreateClient();
-                var response = await client.PostAsync($"{vectorBaseUrl}vectorize_document/{fileId}", null);
+                var response = await client.PostAsync($"{_vectorBaseUrl}vectorize_document/{fileId}?token={_tokenService.GetToken(_userId)}", null);
                 Console.WriteLine(response);
                 response.EnsureSuccessStatusCode();
                 return true;

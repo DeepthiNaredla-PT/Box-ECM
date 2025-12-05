@@ -157,7 +157,7 @@ namespace ECM_API.Services
 
         public async Task<FileDownload> DownloadFileAsync(string userId, string fileId)
         {
-            FileDownload fileDownload = new FileDownload();
+            var fileDownload = new FileDownload();
             
             var client = await GetClient(userId);
 
