@@ -18,7 +18,8 @@
             try
             {
                 var client = _http.CreateClient();
-                var response = await client.PostAsync($"{_vectorBaseUrl}vectorize_document/{fileId}?token={await _tokenService.GetToken(_userId)}", null);
+                var tokenResponse = await _tokenService.GetToken(_userId);
+                var response = await client.PostAsync($"{_vectorBaseUrl}vectorize_document/{fileId}?token={tokenResponse.AccessToken}", null);
                 Console.WriteLine(response);
                 response.EnsureSuccessStatusCode();
                 return true;
