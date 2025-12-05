@@ -51,7 +51,8 @@ namespace ECM_API.Controllers
             if (!result.Success)
                 return BadRequest(result.Error);  // VALID HERE
 
-            await _triggerService.TriggerVectorService(result.Data.Id);
+            bool isSuccess = await _triggerService.TriggerVectorService(result.Data.Id);
+            result.Data.IsVectorizationTriggered = isSuccess;
             return Ok(result.Data);
         }
 
@@ -69,7 +70,8 @@ namespace ECM_API.Controllers
             if (!result.Success)
                 return BadRequest(result.Error);  // VALID HERE
 
-            await _triggerService.TriggerVectorService(result.Data.Id);
+            bool isSuccess = await _triggerService.TriggerVectorService(result.Data.Id);
+            result.Data.IsVectorizationTriggered = isSuccess;
             return Ok(result.Data);
         }
 
@@ -77,11 +79,15 @@ namespace ECM_API.Controllers
         public async Task<IActionResult> UploadLargeFile(string userId, IFormFile file)
         {
             if (file == null) return BadRequest("File missing");
+            using var ms = new MemoryStream();
+            await file.CopyToAsync(ms);
+            ms.Position = 0;
 
-            var result = await _api.UploadLargeFileAsync(userId, file);
+            var result = await _api.UploadLargeFileAsync(userId, ms, file.Length, file.Name);
             if (!result.Success)
                 return BadRequest(result.Error);  // VALID HERE
-            await _triggerService.TriggerVectorService(result.Data.Id);
+            bool isSuccess = await _triggerService.TriggerVectorService(result.Data.Id);
+            result.Data.IsVectorizationTriggered = isSuccess;
             return Ok(result.Data);
         }
 
@@ -99,7 +105,8 @@ namespace ECM_API.Controllers
             var result = await _api.CommitUploadAsync(userId, sessionId, body.Digest, body.Parts);
             if (!result.Success)
                 return BadRequest(result.Error);  // VALID HERE
-            await _triggerService.TriggerVectorService(result.Data.Id);
+            bool isSuccess = await _triggerService.TriggerVectorService(result.Data.Id);
+            result.Data.IsVectorizationTriggered = isSuccess;
             return Ok(result.Data);
         }
 
@@ -127,7 +134,7 @@ namespace ECM_API.Controllers
         [HttpGet("/box/scorm-process/{fileId}")]
         public async Task<IActionResult> ProcessScorm(string fileId, string userId)
         {
-            await _scormProcessingService.ProcessScormAsync(userId, fileId);
+            await _scormProcessingService.UnzipAndReupload(userId, fileId);
             return Ok("SCORM processing completed");
         }
 

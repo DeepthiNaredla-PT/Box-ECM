@@ -1,11 +1,9 @@
 ﻿using ECM_API.Models;
-using System.IO.Compression;
-using System;
+using System.Net;
 using System.Net.Http.Headers;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
-using System.Net;
 
 namespace ECM_API.Services
 {
@@ -14,7 +12,9 @@ namespace ECM_API.Services
         private readonly IHttpClientFactory _http;
         private readonly BoxAuthService _auth;
         private readonly Store _store;
-        private readonly string _parentFolderId = "354218997349";
+        private const string _parentFolderId = "354389949356";
+        private readonly long _fileSizeLimit = 50_000_000;
+
         public BoxApiService(IHttpClientFactory http, BoxAuthService auth, Store store)
         {
             _http = http;
@@ -45,6 +45,23 @@ namespace ECM_API.Services
 
             var result = await client.GetAsync("https://api.box.com/2.0/users/me");
             return await result.Content.ReadAsStringAsync();
+        }
+
+        public async Task<APIResult<FileUploadResponse>> UploadFileAutoAsync(string userId, string parentFolderId, string filePath)
+        {
+            parentFolderId = !string.IsNullOrWhiteSpace(parentFolderId) ? parentFolderId : _parentFolderId;
+            var fileInfo = new FileInfo(filePath);
+            using var stream = File.OpenRead(filePath);
+
+            long fileSize = new FileInfo(filePath).Length;
+            string fileName = Path.GetFileName(filePath);
+
+            if (fileInfo.Length <= _fileSizeLimit)
+            {
+                return await UploadFileAsync(userId, stream, fileName, parentFolderId);
+            }
+
+            return await UploadLargeFileAsync(userId, stream, fileSize, fileName, parentFolderId);
         }
 
         public async Task<APIResult<FileUploadResponse>> UploadFileAsync(
@@ -161,13 +178,10 @@ namespace ECM_API.Services
         }
 
         public async Task<APIResult<FileUploadResponse>> UploadLargeFileAsync(
-    string userId, IFormFile file, int chunkSize = 8 * 1024 * 1024)
+    string userId, Stream stream, long fileSize, string fileName, string parentFolderId = _parentFolderId, int chunkSize = 8 * 1024 * 1024)
         {
-            long fileSize = file.Length;
-            string fileName = file.FileName;
-
             // 1. Create upload session
-            var sessionJson = await CreateUploadSessionAsync(userId, fileName, fileSize);
+            var sessionJson = await CreateUploadSessionAsync(userId, fileName, fileSize, parentFolderId);
             string sessionId = sessionJson.Id;
 
             byte[] buffer = new byte[chunkSize];
@@ -175,53 +189,49 @@ namespace ECM_API.Services
 
             var parts = new List<BoxPart>();
 
-            using (var stream = file.OpenReadStream())
+            int bytesRead;
+
+            while ((bytesRead = await stream.ReadAsync(buffer, 0, chunkSize)) > 0)
             {
-                int bytesRead;
+                long start = uploaded;
+                long end = uploaded + bytesRead - 1;
 
-                while ((bytesRead = await stream.ReadAsync(buffer, 0, chunkSize)) > 0)
+                int retries = 3;
+
+                while (retries > 0)
                 {
-                    long start = uploaded;
-                    long end = uploaded + bytesRead - 1;
-
-                    int retries = 3;
-
-                    while (retries > 0)
+                    try
                     {
-                        try
-                        {
-                            // Upload chunk and get part metadata
-                            var part = await UploadPartAsync(
-                                userId,
-                                sessionId,
-                                buffer,
-                                bytesRead,
-                                start,
-                                end,
-                                fileSize
-                            );
+                        // Upload chunk and get part metadata
+                        var part = await UploadPartAsync(
+                            userId,
+                            sessionId,
+                            buffer,
+                            bytesRead,
+                            start,
+                            end,
+                            fileSize
+                        );
 
-                            parts.Add(part);
-                            break;
-                        }
-                        catch (Exception)
-                        {
-                            retries--;
-                            if (retries == 0)
-                                throw;
-                        }
+                        parts.Add(part);
+                        break;
                     }
-
-                    uploaded += bytesRead;
+                    catch (Exception)
+                    {
+                        retries--;
+                        if (retries == 0)
+                            throw;
+                    }
                 }
+
+                uploaded += bytesRead;
             }
 
             // 2. Compute SHA1 digest for complete file (Box requirement)
             string sha1Base64;
             using (var sha1 = SHA1.Create())
-            using (var fileStream = file.OpenReadStream())
             {
-                var hash = sha1.ComputeHash(fileStream);
+                var hash = sha1.ComputeHash(stream);
                 sha1Base64 = Convert.ToBase64String(hash);
             }
 
@@ -270,7 +280,7 @@ namespace ECM_API.Services
             return response.IsSuccessStatusCode;
         }
 
-        public async Task<BoxUploadSessionResponse?> CreateUploadSessionAsync(string userId, string fileName, long fileSize)
+        public async Task<BoxUploadSessionResponse?> CreateUploadSessionAsync(string userId, string fileName, long fileSize, string parentFolderId = _parentFolderId)
         {
             var client = await GetClient(userId);
 
@@ -278,7 +288,7 @@ namespace ECM_API.Services
             {
                 file_name = fileName,
                 file_size = fileSize,
-                folder_id = _parentFolderId
+                folder_id = parentFolderId
             };
 
             var json = new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json");
@@ -371,14 +381,14 @@ namespace ECM_API.Services
             };
         }
 
-        public async Task<string> CreateOrGetFolderAsync(string userId, string folderName)
+        public async Task<string> CreateOrGetFolderAsync(string userId, string folderName, string parentFolderId = _parentFolderId)
         {
             var client = await GetClient(userId);
 
             var body = new
             {
                 name = folderName,
-                parent = new { id = _parentFolderId }
+                parent = new { id = parentFolderId }
             };
 
             var json = JsonSerializer.Serialize(body);

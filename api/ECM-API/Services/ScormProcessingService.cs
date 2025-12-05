@@ -1,7 +1,9 @@
 ﻿using Aspose.Html;
 using Aspose.Html.Converters;
 using Aspose.Html.Saving;
+using Microsoft.AspNetCore.Mvc;
 using System.IO.Compression;
+using System.Net.Http.Headers;
 
 namespace ECM_API.Services
 {
@@ -73,6 +75,78 @@ namespace ECM_API.Services
 
             // Cleanup
             Directory.Delete(extractPath, true);
+        }
+
+        public async Task<string> DownloadZipFromBoxAsync(string userId, string fileId, string localPath)
+        {
+            var response = await _boxApiService.DownloadFileAsync(userId, fileId);
+
+            await using var fs = new FileStream(localPath, FileMode.Create);
+            await response.Stream.CopyToAsync(fs);
+
+            return localPath;
+        }
+
+
+        public string ExtractZip(string zipPath)
+        {
+            string extractDir = Path.Combine(
+                Path.GetDirectoryName(zipPath)!,
+                "unzipped_" + Guid.NewGuid().ToString("N"));
+
+            Directory.CreateDirectory(extractDir);
+
+            ZipFile.ExtractToDirectory(zipPath, extractDir);
+
+            return extractDir;
+        }
+
+        public async Task UploadDirectoryToBoxAsync(string userId, string localDir, string parentBoxFolderId)
+        {
+            // upload files
+            foreach (var file in Directory.GetFiles(localDir))
+            {
+                await _boxApiService.UploadFileAutoAsync(userId, parentBoxFolderId, file);
+            }
+
+            // upload folders
+            foreach (var dir in Directory.GetDirectories(localDir))
+            {
+                string folderName = Path.GetFileName(dir);
+
+                string newBoxFolderId = await _boxApiService.CreateOrGetFolderAsync(
+                    userId,
+                    folderName, parentBoxFolderId);
+
+                await UploadDirectoryToBoxAsync(userId, dir, newBoxFolderId);
+            }
+        }
+
+        public async Task UnzipAndReupload(
+                                            string userId,
+                                            string zipFileId)
+        {
+            var fileName = await _boxApiService.GetFileNameAsync(userId, zipFileId);
+            fileName = fileName.Replace(".zip", "");
+            var targetBoxFolderId = await _boxApiService.CreateOrGetFolderAsync(userId, fileName);
+
+            // 1️⃣ Create temp folder (SAFE ANYWHERE)
+            string tempRoot = Path.Combine(Path.GetTempPath(), "box_unzip_" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(tempRoot);
+
+            string zipPath = Path.Combine(tempRoot, "input.zip");
+
+            // 2️⃣ Download ZIP from Box
+            await DownloadZipFromBoxAsync(userId, zipFileId, zipPath);
+
+            // 3️⃣ Extract ZIP
+            string extractDir = ExtractZip(zipPath);
+
+            // 4️⃣ Re-upload extracted content preserving structure
+            await UploadDirectoryToBoxAsync(userId, extractDir, targetBoxFolderId);
+            
+            // 5️⃣ Cleanup folder
+            Directory.Delete(tempRoot, true);
         }
     }
 }

@@ -1,7 +1,4 @@
-﻿using Newtonsoft.Json.Linq;
-using System.Net.Http.Headers;
-
-namespace ECM_API.Services
+﻿namespace ECM_API.Services
 {
     public class TriggerService
     {
@@ -12,11 +9,21 @@ namespace ECM_API.Services
             _http = http;
         }
 
-        public async Task TriggerVectorService(string fileId)
+        public async Task<bool> TriggerVectorService(string fileId)
         {
-            var client = _http.CreateClient();
-            var response = await client.PostAsync($"{vectorBaseUrl}vectorize_document/{fileId}", null);
-            Console.WriteLine( response );
+            try
+            {
+                var client = _http.CreateClient();
+                var response = await client.PostAsync($"{vectorBaseUrl}vectorize_document/{fileId}", null);
+                Console.WriteLine(response);
+                response.EnsureSuccessStatusCode();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.ToString());
+                return false;
+            }
         }
     }
 }

@@ -1,5 +1,6 @@
 import { sha1DigestBase64, sha1DigestBase64ForEntireFile } from "./utilities/uploadHelper";
 const API_BASE = "http://localhost:5000";
+//const API_BASE = "https://localhost:7104";
 //const API_BASE = "https://boxecm.local/api";
 const CALL_BACK_URL = "http://localhost:3000/auth/callback";
 //const CALL_BACK_URL = "https://boxecm.local/auth/callback";
@@ -78,9 +79,7 @@ export const uploadSCORMFile = async (userId, file, onProgress) => {
     {
       method: "GET"
     });
-
-  const response = await res.json();
-  console.log("SCORM process response: ", response);
+  console.log("SCORM process response: ", res);
   return uploadResponse
 };
 
